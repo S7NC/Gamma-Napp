@@ -285,6 +285,9 @@ onMounted(() => {
         If you knew this, congratulations, you're quite the nerd 🤓. If you didn’t, there is a short write-up on how this works at
         <a href="https://nostr.boutique/explain" target="_blank" rel="noopener noreferrer" class="underline">https://nostr.boutique/explain</a>.
       </p>
+      <p class="mt-2 text-sm text-[var(--muted)]">
+        If you already have a key, you can clone by clicking I'm already on Nostr. If you are new, follow the I'm new here path and have your own store in under 15 seconds.
+      </p>
 
       <div v-if="cloneMode === 'choice'" class="mt-5 grid gap-2">
         <button class="rounded-lg border border-violet-300 bg-violet-600 px-4 py-2 text-sm font-semibold text-white" @click="startNewFlow">
