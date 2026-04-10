@@ -116,6 +116,7 @@ const setupCheckout = async () => {
       merchantPubkey: merchantIdentity.value.merchantPubkey,
       identitySource: merchantIdentity.value.source,
       relaySource: relayMap.value?.sources?.merchant || '',
+      themeSource: bootstrap.merchantThemeSource || 'none',
       merchantOutbox: relayMap.value?.merchantOutbox || [],
       merchantInbox: relayMap.value?.merchantInbox || [],
       paymentListenRelays: relayMap.value?.paymentListenRelays || [],

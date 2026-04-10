@@ -65,6 +65,7 @@ onMounted(async () => {
       merchantPubkey: identity?.merchantPubkey || '',
       identitySource: identity?.source || '',
       relaySource: relayMap?.sources?.merchant || '',
+      themeSource: bootstrap.merchantThemeSource || 'none',
       merchantOutbox: relayMap?.merchantOutbox || [],
       merchantInbox: relayMap?.merchantInbox || [],
       paymentListenRelays: relayMap?.paymentListenRelays || [],

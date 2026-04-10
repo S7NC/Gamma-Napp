@@ -17,7 +17,7 @@ defineProps({
   }
 })
 
-const { theme, initializeTheme, toggleTheme } = useTheme()
+const { theme, hasMerchantTheme, initializeTheme, toggleTheme } = useTheme()
 const { ensureBootstrap } = useShopBootstrap()
 const NOSTR_OSTRICH_ICON_URL = '/nostr-assets/nostr-logo-black.svg'
 
@@ -148,6 +148,7 @@ onMounted(() => {
         </a>
 
         <button
+          v-if="!hasMerchantTheme"
           class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)]"
           @click="toggleTheme"
         >

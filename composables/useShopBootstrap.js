@@ -2,6 +2,11 @@ import { useShopIdentity } from '~/composables/useShopIdentity'
 import { useRelayLists } from '~/composables/useRelayLists'
 import { useMarketplace } from '~/composables/useMarketplace'
 import { useMerchantProfile } from '~/composables/useMerchantProfile'
+import {
+  useMerchantTheme,
+  applyMerchantThemeToDocument,
+  clearMerchantThemeFromDocument
+} from '~/composables/useMerchantTheme'
 
 let bootstrapPromise = null
 
@@ -10,6 +15,7 @@ export const useShopBootstrap = () => {
   const { resolveRelayMap } = useRelayLists()
   const { fetchProducts } = useMarketplace()
   const { fetchMerchantProfile } = useMerchantProfile()
+  const { fetchMerchantTheme } = useMerchantTheme()
 
   const state = useState('shop-bootstrap-state', () => ({
     isBootstrapping: false,
@@ -18,7 +24,10 @@ export const useShopBootstrap = () => {
     identity: null,
     relayMap: null,
     merchantProfile: null,
-    products: []
+    products: [],
+    merchantTheme: null,
+    merchantThemeSource: 'none',
+    merchantThemeMode: ''
   }))
 
   const ensureBootstrap = async ({ force = false } = {}) => {
@@ -44,7 +53,7 @@ export const useShopBootstrap = () => {
           discoveryRelays: identity.discoveryRelays
         })
 
-        const [merchantProfile, products] = await Promise.all([
+        const [merchantProfile, products, merchantThemeResult] = await Promise.all([
           fetchMerchantProfile({
             merchantPubkey: identity.merchantPubkey,
             relays: relayMap.merchantOutbox
@@ -52,8 +61,22 @@ export const useShopBootstrap = () => {
           fetchProducts({
             merchantPubkey: identity.merchantPubkey,
             relays: relayMap.merchantOutbox
-          })
+          }),
+          fetchMerchantTheme({
+            merchantPubkey: identity.merchantPubkey,
+            relays: relayMap.merchantOutbox
+          }).catch(() => ({ colors: null, source: 'none' }))
         ])
+
+        const merchantTheme = merchantThemeResult?.colors || null
+        const merchantThemeSource = merchantThemeResult?.source || 'none'
+        const merchantThemeMode = merchantTheme
+          ? (applyMerchantThemeToDocument(merchantTheme) || '')
+          : ''
+
+        if (!merchantTheme) {
+          clearMerchantThemeFromDocument()
+        }
 
         state.value = {
           ...state.value,
@@ -63,7 +86,10 @@ export const useShopBootstrap = () => {
           identity,
           relayMap,
           merchantProfile,
-          products
+          products,
+          merchantTheme,
+          merchantThemeSource,
+          merchantThemeMode
         }
 
         return state.value
