@@ -6,7 +6,7 @@ const DEFAULT_DISCOVERY_RELAYS = [
   'wss://relay.primal.net'
 ]
 
-const LOCAL_DEFAULT_NPUB = 'npub1jegt4wpzxlwzy6p35767vjk5qxqw7udw0zl2z9frz4tku67qwfrsf2altc'
+const LOCAL_DEFAULT_NPUB = 'npub1equrmqway3qxw3dkssymusxkwgwrqypfgeqx0lx9pgjam7gnj4ysaqhkj6'
 
 const isLocalHost = (hostname) => {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')

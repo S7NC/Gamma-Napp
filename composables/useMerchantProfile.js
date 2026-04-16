@@ -17,6 +17,7 @@ export const useMerchantProfile = () => {
       const content = JSON.parse(latest.content || '{}')
       return {
         name: content.display_name || content.name || '',
+        banner: content.banner || '',
         picture: content.picture || '',
         about: content.about || ''
       }
