@@ -29,9 +29,6 @@ const heroBackground = computed(() => {
   return merchantProfile.value?.banner || ''
 })
 const showHero = computed(() => Boolean(heroBackground.value))
-const merchantName = computed(() => {
-  return merchantProfile.value?.name?.trim() || 'Nostr Boutique'
-})
 
 onMounted(async () => {
   try {
@@ -107,7 +104,6 @@ onMounted(async () => {
           <div class="relative grid min-h-[360px] gap-8 px-6 py-10 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_280px] lg:px-12 lg:py-14">
             <div class="flex max-w-2xl flex-col justify-end">
               <p class="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Welcome to the shop !</p>
-              <h1 class="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{{ merchantName }}</h1>
 
               <div class="mt-6 flex flex-wrap gap-3 text-sm">
                 <NuxtLink

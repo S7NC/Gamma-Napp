@@ -39,6 +39,7 @@ const invoiceFallbackError = ref('')
 const invoiceFallbackLoading = ref(false)
 const merchantProfile = ref(bootstrapState.value.merchantProfile || null)
 const merchantNpub = ref(bootstrapState.value.identity?.merchantNpub || '')
+const PAYPAL_SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP']
 
 const form = reactive({
   name: cart.shippingInfo.name || '',
@@ -74,6 +75,49 @@ const hasUnsupportedCurrency = computed(() => {
 const subtotalSats = computed(() => {
   if (hasUnsupportedCurrency.value) return 0
   return Math.round(cart.items.reduce((sum, item) => sum + (satAmount(item) * item.quantity), 0))
+})
+
+const originalPriceCurrencies = computed(() => {
+  return [...new Set(
+    cart.items
+      .map((item) => String(item.price?.currency || '').toUpperCase())
+      .filter(Boolean)
+  )]
+})
+
+const paypalCurrency = computed(() => {
+  if (originalPriceCurrencies.value.length !== 1) return ''
+
+  const currency = originalPriceCurrencies.value[0]
+  return PAYPAL_SUPPORTED_CURRENCIES.includes(currency) ? currency : ''
+})
+
+const paypalAmount = computed(() => {
+  if (!paypalCurrency.value) return ''
+
+  const hasInvalidAmount = cart.items.some((item) => !Number.isFinite(Number(item.price?.amount)))
+  if (hasInvalidAmount) return ''
+
+  const total = cart.items.reduce((sum, item) => {
+    const amount = Number(item.price?.amount)
+    return sum + (amount * item.quantity)
+  }, 0)
+
+  const totalWithSurcharge = total * 1.1
+  return totalWithSurcharge > 0 ? totalWithSurcharge.toFixed(2) : ''
+})
+
+const paypalEmail = computed(() => {
+  return String(merchantProfile.value?.paypal || '').trim()
+})
+
+const paypalItemName = computed(() => {
+  if (!currentOrderId.value) return 'Nostr order'
+  return `Nostr order ${currentOrderId.value}`
+})
+
+const paypalCheckoutAvailable = computed(() => {
+  return !!(paypalEmail.value && currentOrderId.value && paypalCurrency.value && paypalAmount.value)
 })
 
 const shippingAddress = computed(() => {
@@ -376,12 +420,12 @@ watch(pricedCurrencies, async () => {
       <h1 class="text-3xl font-bold tracking-tight">Checkout</h1>
 
       <p class="mt-2 text-sm text-[var(--muted)]">
-        1) Shipping info - 2) Review order - 3) Submit order - 4) Lightning invoice
+        1) Shipping info - 2) Review order - 3) Submit order - 4) Payment options
       </p>
 
       <div class="mt-4 grid grid-cols-4 gap-2 text-xs font-semibold">
         <div v-for="n in 4" :key="n" class="rounded-lg border px-3 py-2 text-center"
-             :class="step >= n ? 'border-[var(--brand)] bg-emerald-50 text-[var(--brand-strong)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)]'">
+             :class="step >= n ? 'border-[var(--brand)] bg-emerald-50 text-[var(--brand-strong)] dark:bg-emerald-200 dark:text-black' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)]'">
           Step {{ n }}
         </div>
       </div>
@@ -396,7 +440,7 @@ watch(pricedCurrencies, async () => {
 
       <section v-else-if="cart.items.length === 0" class="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center">
         <p class="text-lg font-semibold">Your cart is empty.</p>
-        <NuxtLink to="/" class="mt-4 inline-flex rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white">
+        <NuxtLink to="/" class="mt-4 inline-flex rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
           Browse products
         </NuxtLink>
       </section>
@@ -444,7 +488,7 @@ watch(pricedCurrencies, async () => {
             <input v-model="form.shippingReference" placeholder="Shipping option ref (30406:...)" class="rounded-lg border border-[var(--line)] px-3 py-2 sm:col-span-2">
             <textarea v-model="form.notes" placeholder="Order notes" rows="3" class="rounded-lg border border-[var(--line)] px-3 py-2 sm:col-span-2" />
           </div>
-          <button class="mt-4 rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white" @click="goToOverview">
+          <button class="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600" @click="goToOverview">
             Continue to review
           </button>
         </section>
@@ -460,7 +504,7 @@ watch(pricedCurrencies, async () => {
           </dl>
           <div class="mt-4 flex gap-2">
             <button class="rounded-lg border border-[var(--line)] px-4 py-2 text-sm" @click="step = 1">Back</button>
-            <button class="rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white" @click="goToSubmit">Continue to submit</button>
+            <button class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600" @click="goToSubmit">Continue to submit</button>
           </div>
         </section>
 
@@ -472,19 +516,19 @@ watch(pricedCurrencies, async () => {
 
           <button
             v-if="!cart.guestKeys"
-            class="mt-4 rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+            class="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
             @click="ensureGuestKeys"
           >
             Generate guest keys
           </button>
 
-          <div v-if="cart.guestKeys" class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm">
+          <div v-if="cart.guestKeys" class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-black dark:text-black">
             <p class="font-semibold">Back up these keys now (required for order recovery):</p>
             <p class="mt-3"><span class="font-semibold">npub:</span> <span class="font-mono text-xs">{{ cart.guestKeys.npub }}</span></p>
             <p class="mt-2"><span class="font-semibold">nsec:</span> <span class="font-mono text-xs">{{ cart.guestKeys.nsec }}</span></p>
             <div class="mt-3 flex flex-wrap gap-2">
-              <button class="rounded border border-[var(--line)] bg-white px-3 py-1" @click="copyText(cart.guestKeys.npub)">Copy npub</button>
-              <button class="rounded border border-[var(--line)] bg-white px-3 py-1" @click="copyText(cart.guestKeys.nsec)">Copy nsec</button>
+              <button class="rounded border border-[var(--line)] bg-white px-3 py-1 text-black" @click="copyText(cart.guestKeys.npub)">Copy npub</button>
+              <button class="rounded border border-[var(--line)] bg-white px-3 py-1 text-black" @click="copyText(cart.guestKeys.nsec)">Copy nsec</button>
             </div>
             <label class="mt-3 flex items-center gap-2">
               <input v-model="confirmSavedKeys" type="checkbox">
@@ -495,7 +539,7 @@ watch(pricedCurrencies, async () => {
           <div class="mt-4 flex gap-2">
             <button class="rounded-lg border border-[var(--line)] px-4 py-2 text-sm" @click="step = 2">Back</button>
             <button
-              class="rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-stone-400"
+              class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-stone-400"
               :disabled="submitting"
               @click="submitOrder"
             >
@@ -505,28 +549,70 @@ watch(pricedCurrencies, async () => {
         </section>
 
         <section v-else class="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5">
-          <h2 class="text-lg font-semibold">Lightning Invoice</h2>
+          <h2 class="text-lg font-semibold">Payment Options</h2>
           <p class="mt-2 text-sm text-[var(--muted)]">Order: <span class="font-mono">{{ cart.orderState.orderId }}</span></p>
 
-          <div v-if="cart.orderState.invoice" class="mt-4">
-            <img :src="qrDataUrl" alt="Lightning invoice QR" class="h-72 w-72 rounded-xl border border-[var(--line)] bg-white p-2">
-            <p class="mt-3 break-all text-xs font-mono">{{ cart.orderState.invoice }}</p>
-            <p class="mt-2 text-sm">Amount: {{ cart.orderState.invoiceAmount || 'unknown' }} sats</p>
-            <button class="mt-3 rounded border border-[var(--line)] bg-white px-3 py-1 text-sm" @click="copyText(cart.orderState.invoice)">Copy invoice</button>
-          </div>
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-[var(--line)] bg-stone-50 p-4">
+              <h3 class="text-sm font-semibold uppercase tracking-[0.15em] text-[var(--muted)]">Lightning</h3>
 
-          <div v-else class="mt-4 rounded-xl border border-[var(--line)] bg-stone-50 p-4 text-sm text-[var(--muted)]">
-            Waiting for merchant payment request (`kind:16`, `type:2`) on buyer inbox relays...
-          </div>
+              <div v-if="cart.orderState.invoice" class="mt-4 text-black">
+                <img :src="qrDataUrl" alt="Lightning invoice QR" class="h-72 w-72 rounded-xl border border-[var(--line)] bg-white p-2">
+                <p class="mt-3 break-all text-xs font-mono">{{ cart.orderState.invoice }}</p>
+                <p class="mt-2 text-sm">Amount: {{ cart.orderState.invoiceAmount || 'unknown' }} sats</p>
+                <button class="mt-3 rounded border border-[var(--line)] bg-orange-500 px-3 py-1 text-sm text-white hover:bg-orange-600" @click="copyText(cart.orderState.invoice)">Copy invoice</button>
+              </div>
 
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <button
-              class="rounded border border-[var(--line)] bg-white px-3 py-1 text-sm"
-              :disabled="invoiceFallbackLoading"
-              @click="requestFallbackInvoice"
+              <div v-else class="mt-4 rounded-xl border border-[var(--line)] bg-white p-4 text-sm text-black">
+                Waiting for merchant payment request (`kind:16`, `type:2`) on buyer inbox relays...
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  class="rounded border border-[var(--line)] bg-orange-500 px-3 py-1 text-sm text-white hover:bg-orange-600"
+                  :disabled="invoiceFallbackLoading"
+                  @click="requestFallbackInvoice"
+                >
+                  {{ invoiceFallbackLoading ? 'Requesting invoice...' : 'Request invoice via merchant lud16' }}
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-if="paypalCheckoutAvailable"
+              class="rounded-xl border border-[var(--line)] bg-stone-50 p-4"
             >
-              {{ invoiceFallbackLoading ? 'Requesting invoice...' : 'Request invoice via merchant lud16' }}
-            </button>
+              <h3 class="text-sm font-semibold uppercase tracking-[0.15em] text-[var(--muted)]">PayPal</h3>
+              <p class="mt-3 text-sm text-[var(--muted)]">
+                Fixed amount checkout for {{ paypalAmount }} {{ paypalCurrency }}. <strong>Includes a 10% FIAT surcharge.</strong> Merchant confirms PayPal payments manually.
+              </p>
+              <p class="mt-3 text-sm text-black dark:text-black">Order ID: <span class="font-mono text-xs text-black dark:text-black">{{ cart.orderState.orderId }}</span></p>
+              <p class="mt-2 text-xs text-[var(--muted)]">
+                The order ID is sent with the PayPal handoff when supported and is always shown here as backup.
+              </p>
+
+              <form
+                action="https://www.paypal.com/cgi-bin/webscr"
+                method="post"
+                target="_blank"
+                class="mt-4"
+              >
+                <input type="hidden" name="cmd" value="_xclick">
+                <input type="hidden" name="business" :value="paypalEmail">
+                <input type="hidden" name="item_name" :value="paypalItemName">
+                <input type="hidden" name="amount" :value="paypalAmount">
+                <input type="hidden" name="currency_code" :value="paypalCurrency">
+                <input type="hidden" name="invoice" :value="cart.orderState.orderId">
+                <input type="hidden" name="custom" :value="cart.orderState.orderId">
+                <input type="hidden" name="email" :value="form.email">
+                <input type="hidden" name="first_name" :value="form.name.split(' ').slice(0, 1).join(' ')">
+                <input type="hidden" name="last_name" :value="form.name.split(' ').slice(1).join(' ')">
+                <input type="hidden" name="charset" value="utf-8">
+                <button type="submit" class="rounded-lg bg-[#0070ba] px-4 py-2 text-sm font-semibold text-white hover:bg-[#005ea6]">
+                  Pay with PayPal
+                </button>
+              </form>
+            </div>
           </div>
 
           <p v-if="invoiceFallbackError" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">

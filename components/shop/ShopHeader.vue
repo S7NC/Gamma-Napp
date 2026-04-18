@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
         <NuxtLink to="/">Home</NuxtLink>
         <NuxtLink to="/products">Products</NuxtLink>
         <NuxtLink to="/categories">Categories</NuxtLink>
-        <button class="cursor-pointer" @click="openSearchModal">Search</button>
+        <NuxtLink to="/contact">About us</NuxtLink>
       </nav>
 
       <nav class="flex flex-1 items-center justify-end gap-4 text-sm font-medium">
@@ -138,6 +138,25 @@ onBeforeUnmount(() => {
           </svg>
           <span class="text-xs font-semibold">{{ itemCount }}</span>
         </NuxtLink>
+
+        <button
+          class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)]"
+          @click="openSearchModal"
+        >
+          <span class="sr-only">Search products</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            class="h-5 w-5"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
 
         <a
           v-if="merchantNpub"
@@ -225,7 +244,7 @@ onBeforeUnmount(() => {
       <NuxtLink to="/" class="rounded-lg px-3 py-2">Home</NuxtLink>
       <NuxtLink to="/products" class="rounded-lg px-3 py-2">Products</NuxtLink>
       <NuxtLink to="/categories" class="rounded-lg px-3 py-2">Categories</NuxtLink>
-      <button class="rounded-lg px-3 py-2 text-left" @click="openSearchModal">Search</button>
+      <NuxtLink to="/contact" class="rounded-lg px-3 py-2">About us</NuxtLink>
     </nav>
   </div>
 

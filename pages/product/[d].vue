@@ -147,7 +147,7 @@ onMounted(async () => {
             >
             <button
               class="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              :class="canAdd ? 'bg-[var(--brand)] hover:bg-[var(--brand-strong)]' : 'cursor-not-allowed bg-stone-400'"
+              :class="canAdd ? 'bg-orange-500 hover:bg-orange-600' : 'cursor-not-allowed bg-stone-400'"
               :disabled="!canAdd"
               @click="addToCart"
             >

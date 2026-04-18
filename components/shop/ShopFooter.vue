@@ -18,10 +18,6 @@ const footerTitle = computed(() => {
   return props.merchantProfile?.name || 'Nostr Boutique'
 })
 
-const footerDescription = computed(() => {
-  return props.merchantProfile?.about || 'A sovereign storefront powered by Nostr relays and Blossom hosting.'
-})
-
 const websiteUrl = computed(() => {
   const raw = String(props.merchantProfile?.website || props.merchantProfile?.url || '').trim()
   if (!raw) return ''
@@ -33,73 +29,18 @@ const websiteLabel = computed(() => {
   return websiteUrl.value.replace(/^https?:\/\//, '')
 })
 
-const openSearch = () => {
-  if (!process.client) return
-  window.dispatchEvent(new CustomEvent('shop:open-search'))
-}
-
-const openDevConsole = () => {
-  if (!process.client) return
-  window.dispatchEvent(new CustomEvent('shop:open-dev-console'))
-}
-
-const footerDescriptionParts = computed(() => {
-  const text = footerDescription.value
-  const urlPattern = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
-  const matches = Array.from(text.matchAll(urlPattern))
-
-  if (!matches.length) {
-    return [{ type: 'text', value: text }]
-  }
-
-  const parts = []
-  let lastIndex = 0
-
-  for (const match of matches) {
-    const value = match[0]
-    const index = match.index || 0
-
-    if (index > lastIndex) {
-      parts.push({ type: 'text', value: text.slice(lastIndex, index) })
-    }
-
-    parts.push({
-      type: 'link',
-      value,
-      href: value.startsWith('http') ? value : `https://${value}`
-    })
-
-    lastIndex = index + value.length
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', value: text.slice(lastIndex) })
-  }
-
-  return parts
+const hasPaypal = computed(() => {
+  return String(props.merchantProfile?.paypal || '').trim().length > 0
 })
+
 </script>
 
 <template>
   <footer class="mt-12 border-t border-[var(--line)] bg-[var(--surface)]/70">
-    <div class="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.5fr_0.9fr] lg:px-8">
+    <div class="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.5fr_0.7fr_0.9fr] lg:px-8">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Nostr Boutique</p>
         <h2 class="mt-2 text-xl font-semibold tracking-tight">{{ footerTitle }}</h2>
-        <p class="mt-3 max-w-xl text-sm text-[var(--muted)]">
-          <template v-for="(part, index) in footerDescriptionParts" :key="`${part.type}-${index}`">
-            <a
-              v-if="part.type === 'link'"
-              :href="part.href"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="underline underline-offset-4 hover:text-[var(--text)]"
-            >
-              {{ part.value }}
-            </a>
-            <span v-else>{{ part.value }}</span>
-          </template>
-        </p>
         <a
           v-if="websiteUrl"
           :href="websiteUrl"
@@ -111,15 +52,27 @@ const footerDescriptionParts = computed(() => {
         </a>
       </div>
 
+      <div class="flex flex-col items-center justify-center gap-2 place-self-center">
+        <div class="inline-flex items-center" aria-label="Bitcoin payment option">
+          <img src="/btc-button.png" alt="Pay with Bitcoin" class="h-9 w-auto">
+        </div>
+        <div
+          v-if="hasPaypal"
+          class="inline-flex items-center"
+          aria-label="PayPal payment option"
+        >
+          <img src="/paypal-button.png" alt="Pay with PayPal" class="h-8 w-auto">
+        </div>
+      </div>
+
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Browse</p>
         <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm font-medium md:grid-cols-3">
           <NuxtLink to="/">Home</NuxtLink>
           <NuxtLink to="/products">Products</NuxtLink>
           <NuxtLink to="/categories">Categories</NuxtLink>
-          <a href="#" @click.prevent="openDevConsole">Dev Console</a>
+          <NuxtLink to="/contact">About us</NuxtLink>
           <NuxtLink to="/cart">Cart</NuxtLink>
-          <a href="#" @click.prevent="openSearch">Search</a>
         </div>
       </div>
     </div>
