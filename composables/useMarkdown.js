@@ -1,7 +1,8 @@
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 export const useMarkdown = () => {
-  
+
   /**
    * Configure marked options for better rendering
    */
@@ -11,14 +12,13 @@ export const useMarkdown = () => {
       mangle: false,
       breaks: true, // Convert line breaks to <br>
       gfm: true, // GitHub Flavored Markdown
-      sanitize: false, // We'll handle sanitization at component level if needed
     })
   }
 
   /**
-   * Convert markdown text to HTML
+   * Convert markdown text to sanitized HTML.
    * @param {string} markdown - The markdown text to convert
-   * @returns {string} HTML string
+   * @returns {string} Sanitized HTML string
    */
   const markdownToHtml = (markdown) => {
     if (!markdown || typeof markdown !== 'string') {
@@ -27,10 +27,10 @@ export const useMarkdown = () => {
 
     try {
       configureMarked()
-      return marked(markdown)
+      return DOMPurify.sanitize(marked(markdown))
     } catch (error) {
       console.error('Error converting markdown to HTML:', error)
-      return markdown // Return original markdown if conversion fails
+      return ''
     }
   }
 

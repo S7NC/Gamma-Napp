@@ -20,6 +20,7 @@
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
     "@tailwindcss/vite": "^4.1.17",
+    "dompurify": "^3.4.2",
     "gsap": "^3.14.2",
     "marked": "^17.0.4",
     "nostr-tools": "^2.23.3",
